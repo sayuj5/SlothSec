@@ -251,6 +251,170 @@ test_extract_json_from_llm_markdown PASSED
 
 ---
 
+## 🗂️ Using Your Own Repository
+
+You can point SlothSec at **any real codebase** on your machine — not just the test fixture. Here's how to do it properly.
+
+### Step 1 — Clone the Repo You Want to Audit
+
+Clone the target project anywhere on your local disk:
+
+```powershell
+git clone https://github.com/your-org/your-project.git C:\Projects\your-project
+```
+
+Or use an existing local directory — it doesn't need to be a git repo.
+
+### Step 2 — Register It in SlothSec
+
+1. Go to **http://localhost:5173/repositories**
+2. Click **"Add Repository"**
+3. Fill in:
+   - **Name:** anything descriptive, e.g. `My Django App`
+   - **Path:** the absolute path on disk, e.g. `C:\Projects\your-project`
+4. Click **Register**
+
+> ⚠️ The path must exist as a directory. SlothSec validates it and rejects paths that don't exist or try directory traversal.
+
+### Step 3 — Choose What to Scan
+
+Go to **http://localhost:5173/scans** → **New Scan** and pick which scanners apply to your project:
+
+| Scanner | Best for | Skip if |
+|---------|----------|---------|
+| **Semgrep** (SAST) | Python, JS, TS, Go, Java, Ruby, C/C++ | Binary-only projects |
+| **OSV-Scanner** (SCA) | Any project with `requirements.txt`, `package.json`, `go.sum`, `pom.xml`, etc. | No dependency manifests |
+| **Gitleaks** (Secrets) | Any git repository | Not a git repo |
+
+You can run one, two, or all three in a single scan job.
+
+### Step 4 — Review Your Real Findings
+
+SlothSec will show you **real vulnerabilities** in your codebase. Use the Findings page (`/findings`) to:
+- Filter by **Critical / High / Medium / Low**
+- Filter by scanner (semgrep / osv / gitleaks)
+- Search by file name, rule ID, or package name
+- Mark findings as **Ignored** if they're false positives or out of scope
+
+---
+
+## 🔧 Customization Guide
+
+### Switch the AI Model
+
+SlothSec works with **any Ollama-compatible model**. To use a different one:
+
+**1. Pull your preferred model:**
+```powershell
+ollama pull llama3.2:3b       # Meta Llama 3.2 (faster, lighter)
+ollama pull gemma3:1b          # Google Gemma (already installed)
+ollama pull codellama:7b       # Code-specialized
+ollama pull deepseek-r1:7b     # Strong reasoning model
+```
+
+**2. Set it in your `.env` file:**
+```bash
+# Copy the example first
+cp .env.example .env
+```
+Then edit `.env`:
+```env
+OLLAMA_MODEL=llama3.2:3b      # or any model you pulled
+OLLAMA_TIMEOUT_SECONDS=240    # increase for larger/slower models
+```
+
+**3. Restart the backend** — the new model is picked up immediately.
+
+> You can also change the model live from **http://localhost:5173/settings** → AI Engine settings.
+
+---
+
+### Add Custom Semgrep Rules
+
+Semgrep supports custom YAML rules. To add your own:
+
+**1. Create a rules file**, e.g. `my-rules.yaml`:
+```yaml
+rules:
+  - id: no-hardcoded-db-url
+    patterns:
+      - pattern: DATABASE_URL = "..."
+    message: "Hardcoded database URL detected"
+    languages: [python]
+    severity: ERROR
+```
+
+**2. Point SlothSec to your rules** in `.env`:
+```env
+SEMGREP_EXTRA_ARGS=--config /path/to/my-rules.yaml
+```
+
+Or modify [`backend/app/services/scanners/semgrep.py`](backend/app/services/scanners/semgrep.py) to add extra `--config` flags alongside the default `--config auto`.
+
+---
+
+### Change the Database Location
+
+By default SlothSec uses `slothsec.db` in the project root. To use a different path:
+
+```env
+# in .env
+DATABASE_URL=sqlite:///C:/MyData/slothsec.db
+```
+
+---
+
+### Configure Scan Timeout
+
+For large repositories, scans may need more time:
+```env
+SCAN_TIMEOUT_SECONDS=600   # 10 minutes (default: 300)
+```
+
+---
+
+### Schedule Automatic Scans
+
+Go to **http://localhost:5173/automation** → New Schedule and use any standard cron expression:
+
+| Expression | Meaning |
+|------------|---------|
+| `0 2 * * *` | Every day at 2:00 AM |
+| `0 */6 * * *` | Every 6 hours |
+| `0 9 * * 1` | Every Monday at 9:00 AM |
+| `*/30 * * * *` | Every 30 minutes |
+
+---
+
+### Run SlothSec Headless (API-only)
+
+You can drive SlothSec entirely via its REST API without the frontend:
+
+```powershell
+# Register a repo
+curl.exe -X POST http://127.0.0.1:8000/api/v1/repositories `
+  -H "Content-Type: application/json" `
+  -d '{\"name\":\"My App\",\"path\":\"C:\\Projects\\my-app\"}'
+
+# Start a scan (returns scan_id)
+curl.exe -X POST http://127.0.0.1:8000/api/v1/scans `
+  -H "Content-Type: application/json" `
+  -d '{\"repository_id\":\"<repo-id>\",\"scanners\":[\"semgrep\",\"osv\",\"gitleaks\"]}'
+
+# Poll scan status
+curl.exe http://127.0.0.1:8000/api/v1/scans/<scan-id>
+
+# Get findings
+curl.exe "http://127.0.0.1:8000/api/v1/findings?repository_id=<repo-id>&severity=CRITICAL"
+
+# Download PDF report
+curl.exe -o report.pdf http://127.0.0.1:8000/api/v1/reports/<scan-id>/pdf
+```
+
+Full interactive docs at **http://127.0.0.1:8000/docs** (Swagger UI).
+
+---
+
 ## 🖥️ Application Pages
 
 | Page | URL | Description |
