@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #0B0F14;
+    --bg-sidebar: #0E141B;
+    --bg-surface: #121A23;
+    --bg-elevated: #17212C;
+    --border-subtle: #1E293B;
+    --border-strong: #334155;
+    --accent-emerald: #10B981;
+    --text-primary: #E5E7EB;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --severity-critical: #EF4444;
+    --severity-high: #F97316;
+    --severity-medium: #EAB308;
+    --severity-low: #3B82F6;
+    --severity-info: #64748B;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Custom scrollbar for dark security console aesthetic */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0E141B;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E293B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  code, pre, .font-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}

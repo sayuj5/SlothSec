@@ -1,0 +1,4 @@
+# Controlled test fixture for OSV-Scanner dependency vulnerability testing
+urllib3==1.26.4
+jinja2==2.11.2
+pyyaml==5.3.1
